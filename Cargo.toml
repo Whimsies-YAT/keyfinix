@@ -1,0 +1,10 @@
+[workspace]
+resolver = "3"
+members = ["frontend"]
+
+[workspace.package]
+edition = "2024"
+license = "Apache-2.0"
+authors = ["MomentQYC <admin@yatserver.com>", "eternal-flame-AD (Yumechi) <yume@yumechi.jp>"]
+repository = "https://github.com/Whimsies-YAT/Vickey"
+homepage = "https://github.com/Whimsies-YAT/Vickey"
