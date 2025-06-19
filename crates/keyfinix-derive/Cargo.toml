@@ -1,0 +1,19 @@
+[package]
+name = "keyfinix-derive"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+sha2.workspace = true
+http.workspace = true
+uuid = { workspace = true, features = ["v8"] }
+quote = "1"
+syn = "2"
+proc-macro2 = "1"
+
+[lib]
+proc-macro = true

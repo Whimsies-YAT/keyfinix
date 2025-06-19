@@ -1,0 +1,18 @@
+[package]
+name = "keyfinix-comm"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+lettre = { version = "0.11", default-features = false, features = ["builder", "tokio1-rustls-tls", "smtp-transport", "file-transport"] }
+tracing.workspace = true
+serde = { workspace = true, features = ["derive"] }
+thiserror.workspace = true
+askama = "0.14"
+idna = "1.0"
+async-trait = "0.1"
+psl = "2.1"

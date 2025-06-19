@@ -1,0 +1,84 @@
+[package]
+name = "keyfinix-server"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+
+[dependencies]
+migration = { path = "migration" }
+keyfinix-crypto.workspace = true
+keyfinix-sandboxing.workspace = true
+keyfinix-frontend.workspace = true
+keyfinix-derive.workspace = true
+futures.workspace = true
+axum.workspace = true
+aes-gcm.workspace = true
+sha2.workspace = true
+base64.workspace = true
+itertools.workspace = true
+derive_more.workspace = true
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "net", "signal"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
+clap.workspace = true
+sea-orm = { version = "1.1", features = ["runtime-tokio", "sqlx-postgres"] }
+thiserror.workspace = true
+
+url = { workspace = true, features = ["serde"] }
+serde = { workspace = true, features = ["derive"] }
+prometheus.workspace = true
+chrono = { workspace = true, features = ["serde"] }
+governor.workspace = true
+secrecy = { workspace = true, features = ["serde"] }
+parking_lot.workspace = true
+tower-service.workspace = true
+tracing-log.workspace = true
+
+hashbrown = { version = "0.15", features = ["serde"] }
+serde_json = { version = "1.0", features = ["raw_value"] }
+ouroboros = "0.18"
+reqwest = { version = "0.12", default-features = false, features = ["json", "http2", "rustls-tls"] }
+tower-http = { version = "0.6", features = ["timeout", "metrics", "catch-panic", "cors", "limit", "request-id", "trace"] }
+http.workspace = true
+rayon = "1.10.0"
+axum-server = { version = "0.7", features = ["tls-rustls-no-provider"] }
+rustls = { version = "0.23.28", features = ["aws_lc_rs"] }
+x509-parser = "0.17.0"
+tower.workspace = true
+hyper = "1.6.0"
+pem-rfc7468 = "0.7.0"
+axum-extra = { version = "0.10.1", features = ["typed-header", "cookie"] }
+uuid.workspace = true
+rand = "0.9.1"
+siphasher = "1.0.1"
+jsonwebtoken = "9.3.1"
+
+[build-dependencies]
+vergen-gix.workspace = true
+
+[features]
+debug = []
+large-scale = []
+testing = []
+testing-with-sql-dump = ["testing"]
+metrics = []
+compression = [
+    "tower-http/compression-gzip",
+    "tower-http/compression-br",
+    "tower-http/compression-zstd",
+    "tower-http/compression-deflate",
+]
+decompression = [
+    "tower-http/decompression-gzip",
+    "tower-http/decompression-br",
+    "tower-http/decompression-zstd",
+    "tower-http/decompression-deflate",
+]
+protected-memory = ["keyfinix-sandboxing/protected-memory"]
+
+[[bin]]
+name = "keyfinix-server"
+path = "src/main.rs"

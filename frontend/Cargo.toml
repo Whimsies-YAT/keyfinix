@@ -1,6 +1,6 @@
 [package]
 name = "keyfinix-frontend"
-version = "0.1.0"
+version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
@@ -8,3 +8,16 @@ repository.workspace = true
 homepage.workspace = true
 
 [dependencies]
+flate2.workspace = true
+axum.workspace = true
+futures.workspace = true
+http.workspace = true
+tower.workspace = true
+
+[build-dependencies]
+base64.workspace = true
+flate2.workspace = true
+mime_guess.workspace = true
+proc-macro2.workspace = true
+quote.workspace = true
+sha2.workspace = true

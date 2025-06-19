@@ -1,0 +1,16 @@
+name: keyfinix-server-dev
+services:
+  db:
+    restart: always
+    image: postgres:17-alpine
+    ports:
+      - "35432:5432"
+    environment:
+      - POSTGRES_USER=developer
+      - POSTGRES_DB=keyfinix-dev
+      - POSTGRES_PASSWORD=developer
+    command: '-c shared_buffers=128MB -c work_mem=8MB -c max_wal_senders=0 -c wal_level=minimal -c synchronous_commit=off -c fsync=off -c full_page_writes=off'
+    healthcheck:
+      test: "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
+      interval: 5s
+      retries: 20
