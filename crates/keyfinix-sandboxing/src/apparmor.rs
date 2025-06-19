@@ -4,6 +4,7 @@ use std::{
     ffi::{CStr, CString, c_char, c_int, c_ulong},
     hash::Hasher,
     marker::PhantomData,
+    os::fd::AsRawFd,
     sync::atomic::AtomicU32,
 };
 
@@ -18,7 +19,8 @@ use super::Sandboxing;
 unsafe extern "C" {
     fn aa_is_enabled() -> c_int;
     fn aa_change_hat(profile: *const c_char, token: c_ulong) -> c_int;
-    fn aa_getcon(label: *mut *mut c_char, mode: *mut *mut c_char) -> c_int;
+    fn aa_getpeercon(fd: c_int, label: *mut *const c_char, mode: *mut *const c_char) -> c_int;
+    fn aa_getcon(label: *mut *const c_char, mode: *mut *const c_char) -> c_int;
     fn aa_change_profile(profile: *const c_char) -> c_int;
 }
 
@@ -47,10 +49,17 @@ pub fn change_profile(profile: &str) -> std::io::Result<()> {
 
 /// Check current `AppArmor` context
 #[allow(unsafe_code)]
-fn get_context() -> (String, String) {
-    let mut label = std::ptr::null_mut();
-    let mut mode = std::ptr::null_mut();
-    let ret = unsafe { aa_getcon(&mut label, &mut mode) };
+fn get_context(socket_fd: Option<c_int>) -> (String, String) {
+    use std::ffi::CStr;
+
+    let mut label = std::ptr::null();
+    let mut mode = std::ptr::null();
+    let ret = unsafe {
+        match socket_fd {
+            Some(fd) => aa_getpeercon(fd, &mut label, &mut mode),
+            None => aa_getcon(&mut label, &mut mode),
+        }
+    };
     assert!(
         ret >= 0,
         "AppArmor get context failed: {:?}",
@@ -59,18 +68,24 @@ fn get_context() -> (String, String) {
     if label.is_null() {
         return (String::new(), String::new());
     }
-    let label_str = unsafe { CStr::from_ptr(label) }
-        .to_string_lossy()
-        .into_owned();
+    let label_cstr = unsafe {
+        CStr::from_bytes_until_nul(std::slice::from_raw_parts(label.cast::<u8>(), ret as usize))
+    }
+    .expect("label is not null-terminated");
+    let label_str = label_cstr.to_string_lossy().into_owned();
 
     #[allow(clippy::cast_sign_loss, reason = "already checked above")]
     let mode_len = (ret as usize)
         .checked_sub(label_str.len() + 1)
         .expect("String length from libapparmor underflow");
 
-    let mode_bytes = unsafe { std::slice::from_raw_parts(mode as *const u8, mode_len) };
+    let mut mode_bytes = unsafe { std::slice::from_raw_parts(mode as *const u8, mode_len) };
+    if mode_bytes.last() == Some(&0) {
+        mode_bytes = mode_bytes.split_last().unwrap().1;
+    }
     let mode_str = String::from_utf8_lossy(mode_bytes).to_string();
-    unsafe { libc::free(label.cast::<libc::c_void>()) };
+    unsafe { libc::free(label as *mut _) };
+
     (label_str, mode_str)
 }
 
@@ -96,6 +111,16 @@ impl AppArmorConfig {
         }
     }
 
+    pub fn socket<F: AsRawFd>(self, fd: F) -> (Self, String) {
+        let (label, mode) = get_context(Some(fd.as_raw_fd()));
+        (
+            Self {
+                profile_name: CString::new(label).expect("Invalid profile name"),
+            },
+            mode,
+        )
+    }
+
     /// Create a new `AppArmor` hat configuration (and enforcement mode) by querying for the current profile name
     ///
     /// Require AppArmor introspection to be allowed.
@@ -106,7 +131,7 @@ impl AppArmorConfig {
             tracing::warn!("AppArmor is not enabled");
             return None;
         }
-        let (label, mode) = get_context();
+        let (label, mode) = get_context(None);
         Some((
             Self {
                 profile_name: CString::new(label).expect("Invalid profile name"),
